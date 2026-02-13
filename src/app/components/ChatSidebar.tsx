@@ -1,5 +1,8 @@
-import { Search, MoreVertical, Edit, Users, Radio } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { Search, MoreVertical, Edit, Users, Radio, Settings, LogOut } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { SettingsModal } from './SettingsModal';
 
 interface Chat {
   id: string;
@@ -80,6 +83,31 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    setMenuOpen(false);
+    navigate('/');
+  };
+
+  const handleSettings = () => {
+    setMenuOpen(false);
+    setSettingsOpen(true);
+  };
+
   return (
     <div className="w-full lg:w-96 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* Header */}
@@ -105,12 +133,34 @@ export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) 
             >
               <Radio className="w-5 h-5 text-gray-700" />
             </button>
-            <button 
-              className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
-              title="Меню"
-            >
-              <MoreVertical className="w-5 h-5 text-gray-700" />
-            </button>
+            <div className="relative" ref={menuRef}>
+              <button 
+                className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                title="Меню"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >
+                <MoreVertical className="w-5 h-5 text-gray-700" />
+              </button>
+              
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50">
+                  <button
+                    onClick={handleSettings}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <Settings className="w-5 h-5 text-gray-600" />
+                    <span className="text-gray-700">Настройки</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left text-red-600"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Выйти</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
@@ -169,6 +219,8 @@ export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) 
           </button>
         ))}
       </div>
+
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

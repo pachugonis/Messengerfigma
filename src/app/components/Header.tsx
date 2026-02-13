@@ -26,12 +26,12 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button className="hidden sm:block px-5 py-2.5 text-gray-700 hover:text-gray-900 transition-colors">
+            <Link to="/login" className="hidden sm:block px-5 py-2.5 text-gray-700 hover:text-gray-900 transition-colors">
               Войти
-            </button>
-            <Link to="/chats">
+            </Link>
+            <Link to="/register">
               <button className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all shadow-lg hover:shadow-xl">
-                Начать
+                Регистрация
               </button>
             </Link>
           </div>
