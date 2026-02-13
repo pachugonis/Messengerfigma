@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { X, User, Bell, Lock, Palette, HelpCircle } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, User, Bell, Lock, Palette, HelpCircle, Camera, Check } from 'lucide-react';
+import { ImageCropper } from './ImageCropper';
+import { useUser } from '../context/UserContext';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -10,9 +12,33 @@ type SettingsTab = 'profile' | 'notifications' | 'privacy' | 'appearance' | 'hel
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-  const [username, setUsername] = useState('');
+  const { user, updateAvatar, updateBio } = useUser();
+  const [bio, setBio] = useState(user?.bio || '');
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const username = user?.login || 'User';
+  const avatar = user?.avatar || null;
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setCropImage(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleCropComplete = (croppedImage: string) => {
+    updateAvatar(croppedImage);
+    setCropImage(null);
+  };
 
   if (!isOpen) return null;
 
@@ -71,12 +97,48 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-semibold">
-                    {username ? username[0].toUpperCase() : 'U'}
+                  <div className="relative">
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt="Avatar"
+                        className="w-20 h-20 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-semibold">
+                        {username ? username[0].toUpperCase() : 'U'}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button className="px-4 py-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors text-sm font-medium">
-                    Изменить фото
-                  </button>
+                  <div>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-4 py-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors text-sm font-medium"
+                    >
+                      Загрузить фото
+                    </button>
+                    {avatar && (
+                      <button
+                        onClick={() => updateAvatar(null)}
+                        className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-sm font-medium"
+                      >
+                        Удалить
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
                 </div>
                 
                 <div>
@@ -86,10 +148,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <input
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Введите имя"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    disabled
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-400 mt-1">Имя пользователя нельзя изменить</p>
                 </div>
 
                 <div>
@@ -97,6 +159,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     О себе
                   </label>
                   <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
                     placeholder="Расскажите о себе"
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none"
@@ -225,13 +289,34 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Footer */}
           {activeTab === 'profile' && (
             <div className="px-6 py-4 border-t border-gray-200">
-              <button className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors font-medium">
-                Сохранить изменения
+              <button
+                onClick={() => {
+                  updateBio(bio);
+                  setSaved(true);
+                  setTimeout(() => setSaved(false), 2000);
+                }}
+                className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                {saved ? (
+                  <>
+                    <Check className="w-5 h-5" />
+                    Сохранено
+                  </>
+                ) : (
+                  'Сохранить изменения'
+                )}
               </button>
             </div>
           )}
         </div>
       </div>
+      {cropImage && (
+        <ImageCropper
+          image={cropImage}
+          onCrop={handleCropComplete}
+          onCancel={() => setCropImage(null)}
+        />
+      )}
     </div>
   );
 }

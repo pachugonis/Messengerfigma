@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { MessageCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { RecoveryCodeModal } from '../components/RecoveryCodeModal';
+import { useUser } from '../context/UserContext';
 
 export function Register() {
   const [login, setLogin] = useState('');
@@ -12,6 +13,7 @@ export function Register() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  const { setUser } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +48,7 @@ export function Register() {
         throw new Error(data.message || 'Ошибка регистрации');
       }
 
+      setUser({ login: data.login });
       setRecoveryCode(data.recoveryCode);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка');

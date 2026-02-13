@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { MessageCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useUser } from '../context/UserContext';
 
 export function Login() {
   const [login, setLogin] = useState('');
@@ -9,6 +10,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +40,7 @@ export function Login() {
         throw new Error(data.message || 'Неверный логин или пароль');
       }
 
+      setUser({ login: data.login });
       navigate('/chats');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка');

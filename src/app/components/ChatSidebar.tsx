@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Search, MoreVertical, Edit, Users, Radio, Settings, LogOut } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { SettingsModal } from './SettingsModal';
+import { useUser } from '../context/UserContext';
 
 interface Chat {
   id: string;
@@ -85,8 +86,18 @@ interface ChatSidebarProps {
 export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { setUser } = useUser();
+
+  const filteredChats = chats.filter((chat) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      chat.name.toLowerCase().includes(query) ||
+      chat.lastMessage.toLowerCase().includes(query)
+    );
+  });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -100,6 +111,7 @@ export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) 
 
   const handleLogout = () => {
     setMenuOpen(false);
+    setUser(null);
     navigate('/');
   };
 
@@ -170,6 +182,8 @@ export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) 
           <input
             type="text"
             placeholder="Поиск"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border-none outline-none focus:bg-gray-200 transition-colors"
           />
         </div>
@@ -177,7 +191,14 @@ export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) 
       
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
-        {chats.map((chat) => (
+        {filteredChats.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <Search className="w-12 h-12 text-gray-300 mb-3" />
+            <p className="text-gray-500">Чаты не найдены</p>
+            <p className="text-sm text-gray-400 mt-1">Попробуйте изменить запрос</p>
+          </div>
+        ) : (
+          filteredChats.map((chat) => (
           <button
             key={chat.id}
             onClick={() => onSelectChat(chat.id)}
@@ -217,7 +238,8 @@ export function ChatSidebar({ selectedChatId, onSelectChat }: ChatSidebarProps) 
               </div>
             </div>
           </button>
-        ))}
+        ))
+        )}
       </div>
 
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
